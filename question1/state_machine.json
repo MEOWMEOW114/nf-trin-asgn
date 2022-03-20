@@ -1,0 +1,51 @@
+{
+  "Comment": "ETL after cloning raw data to private s3",
+  "StartAt": "Submit Paginged Job",
+  "States": {
+    "Submit Paginged Job": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:ap-northeast-1:315374069669:function:NFTStepFunctions-ScrapingFromRaw-SubmitJobs",
+      "ResultPath": "$.guid",
+      "Next": "Wait X Seconds"
+    },
+    "Wait X Seconds": {
+      "Type": "Wait",
+      "SecondsPath": "$.wait_time",
+      "Next": "Get Job Status"
+    },
+    "Get Job Status": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:ap-northeast-1:315374069669:function:NFTStepFunctions-ScrapingFromRaw-CheckJob",
+      "Next": "All Jobs Complete?",
+      "InputPath": "$.guid",
+      "ResultPath": "$.status"
+    },
+    "All Jobs Complete?": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.status",
+          "StringEquals": "FAILED",
+          "Next": "Job Failed"
+        },
+        {
+          "Variable": "$.status",
+          "StringEquals": "SUCCEEDED",
+          "Next": "Get Final Job Status"
+        }
+      ],
+      "Default": "Wait X Seconds"
+    },
+    "Job Failed": {
+      "Type": "Fail",
+      "Cause": "AWS Batch Job Failed",
+      "Error": "DescribeJob returned FAILED"
+    },
+    "Get Final Job Status": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:ap-northeast-1:315374069669:function:NFTStepFunctions-ScrapingFromRaw-CheckJob",
+      "InputPath": "$.guid",
+      "End": true
+    }
+  }
+}
