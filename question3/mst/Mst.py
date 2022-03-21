@@ -40,8 +40,10 @@ def prims_mst(graph: Graph):
     
     print(selected_nodes)
 
-    # While there are nodes that are not included in the MST, keep looking:
+    break_count = 0
+    # While there are vertics not included in the MST, keep looping:
     while(False in selected_nodes):
+        break_count = break_count + 1
         # Initialize min value
         minimum = sys.maxsize
 
@@ -55,6 +57,7 @@ def prims_mst(graph: Graph):
             # If the node is part of the MST, look its relationships
             if selected_nodes[i]:
                 for j in range(vertices):
+                  
                     # If the vertic have a path to the ending node AND its not included in the MST (to avoid cycles)
                     # If the weight path analized is less than the minimum of the MST
                     vertic_has_path_to_ending_node = selected_nodes[j]  == False
@@ -67,6 +70,11 @@ def prims_mst(graph: Graph):
                             minimum = graph.adj_matrix[i][j]
                             start, end = i, j
         
+        if break_count > vertices * vertices:
+            # means no solution
+            return -1
+
+    
     # selected becase we added the ending vertex to the MST
         selected_nodes[end] = True
 
