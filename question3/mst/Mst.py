@@ -98,23 +98,3 @@ def prims_mst(graph: Graph):
                 print("%d - %d: %d" % (i, j, result[i][j]))
     return sum
 
-
-if __name__ == "__main__":
-    example_graph = Graph(9)
-
-    example_graph.add_edge(0, 1, 4)
-    example_graph.add_edge(0, 2, 7)
-    example_graph.add_edge(1, 2, 11)
-    example_graph.add_edge(1, 3, 9)
-    example_graph.add_edge(1, 5, 20)
-    example_graph.add_edge(2, 5, 1)
-    example_graph.add_edge(3, 6, 6)
-    example_graph.add_edge(3, 4, 2)
-    example_graph.add_edge(4, 6, 10)
-    example_graph.add_edge(4, 8, 15)
-    example_graph.add_edge(4, 7, 5)
-    example_graph.add_edge(4, 5, 1)
-    example_graph.add_edge(5, 7, 3)
-    example_graph.add_edge(6, 8, 5)
-    example_graph.add_edge(7, 8, 12)
-    prims_mst(example_graph)
