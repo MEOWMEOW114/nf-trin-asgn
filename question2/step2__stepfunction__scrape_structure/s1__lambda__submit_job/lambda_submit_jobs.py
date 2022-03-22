@@ -41,7 +41,7 @@ def lambda_handler(event, context):
                 # Submit a Batch Job
                 response = batch.submit_job(
                     jobQueue=job_queue,
-                    jobName=jobName,
+                    jobName=job_name,
                     jobDefinition=job_definition,
                     containerOverrides=containerOverrides)
                 # Log response from AWS Batch
