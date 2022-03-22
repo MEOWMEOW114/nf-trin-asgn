@@ -1,0 +1,51 @@
+{
+  "Comment": "ETL after cloning raw data to private s3",
+  "StartAt": "Create Job for each web content",
+  "States": {
+    "Create Job for each web content": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:ap-northeast-1:315374069669:function:NFTQuestion2-SubmitJobs",
+      "ResultPath": "$.guid",
+      "Next": "Wait 60 Seconds"
+    },
+    "Wait 60 Seconds": {
+      "Type": "Wait",
+      "Seconds": 60,
+      "Next": "Get Job Status"
+    },
+    "Get Job Status": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:ap-northeast-1:315374069669:function:NFTStepFunctions-ScrapingFromRaw-CheckJob",
+      "Next": "All Jobs Complete?",
+      "InputPath": "$.guid",
+      "ResultPath": "$.status"
+    },
+    "All Jobs Complete?": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.status",
+          "StringEquals": "FAILED",
+          "Next": "Job Failed"
+        },
+        {
+          "Variable": "$.status",
+          "StringEquals": "SUCCEEDED",
+          "Next": "TODO EMR for all daily data"
+        }
+      ],
+      "Default": "Wait 60 Seconds"
+    },
+    "Job Failed": {
+      "Type": "Fail",
+      "Cause": "AWS Batch Job Failed",
+      "Error": "DescribeJob returned FAILED"
+    },
+    "TODO EMR for all daily data": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:ap-northeast-1:315374069669:function:NFTStepFunctions-ScrapingFromRaw-CheckJob",
+      "InputPath": "$.guid",
+      "End": true
+    }
+  }
+}
