@@ -25,6 +25,10 @@ import time
 from io import StringIO
 from dotenv import load_dotenv
 import argparse
+from bs4 import BeautifulSoup
+import datetime as dt
+import pandas as pd
+
 load_dotenv()
 """
 Specify the Webdriver options 
@@ -43,6 +47,7 @@ options.add_argument(f'user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) Appl
 dest_s3_bucket = os.getenv('DEST_S3_BUCKET')
 dest_aws_access_key_id = os.getenv('DEST_S3_ACCESS_KEY')
 dest_aws_secret_access_key =  os.getenv('DEST_S3_SECRET_ACCESS_KEY')
+dest_s3_primary_bucket = 'nft-question2-scraping-primary'
 
 # REMARKS
 # this is a temproary data set, for company metatdata mapping, this will be stored in dynamodb / s3 
@@ -93,14 +98,51 @@ async def main(company, category):
     # print(driver.page_source.encode("utf-8"))
     page_content = driver.page_source.encode("utf-8")
 
-    
+    s3_target = boto3.client('s3',aws_access_key_id=dest_aws_access_key_id, aws_secret_access_key=dest_aws_secret_access_key)
+
+    ##########################################
+    # upload raw data to s3 
     today = date.today()
     date_string = today.strftime("%Y/%m/%d")
-    s3_target = boto3.client('s3',aws_access_key_id=dest_aws_access_key_id, aws_secret_access_key=dest_aws_secret_access_key)
     
     key = f"raw/{date_string}/{company}/{category}/source.html"
     s3_target.put_object(Body=page_content, Bucket=dest_s3_bucket, Key=key)
     driver.quit()
+
+    ####################################
+    # upload primary data to s3 
+    # using beautifulsoup for scraping
+
+    obj = s3_target.get_object(Bucket=dest_s3_bucket, Key=key)
+    html = (obj['Body'].read())
+    soup = BeautifulSoup(html, 'lxml') 
+    
+    data = []
+
+    type1_products = soup.find_all('div', class_="product-tile")
+    print(len(type1_products))
+
+    for product in type1_products:
+        name =  product.find('li', class_='product-name-container').find('a').string
+        price = product.find('li', class_='product-price-container').find('span', class_='ada-link productAmount').string
+        price = price.replace('HK$', '').replace(',', '').strip()
+        print(name, price)
+        data.append([dt.datetime.now(),name, price])
+
+    type2_products = soup.find_all('li', class_="product-tile")
+    print(len(type2_products))
+
+    for product in type2_products:
+        name =  product.find('li', class_='product-name-container').find('a').string
+        price = product.find('li', class_='product-price-container').find('span', class_='ada-link productAmount').string
+        price = price.replace('HK$', '').replace(',', '').strip()
+        data.append([dt.datetime.now(),name, price])
+
+    df = pd.DataFrame(data, columns=['Create At', 'Name', 'Price'])
+    csv_buffer = StringIO()
+    df.to_csv(csv_buffer)
+    object_key = f"primary/{date_string}/{company}/{category}/data.csv"
+    s3_target.put_object(Body=csv_buffer.getvalue(), Bucket=dest_s3_primary_bucket, Key=f'{object_key}')
 
 
 if __name__ == '__main__':
