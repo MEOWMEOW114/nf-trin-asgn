@@ -2,6 +2,10 @@ from __future__ import print_function
 
 import json
 import boto3
+import urllib.parse
+import os
+import random
+
 company_metadata = {
     'michaelkors_global': {
         'woman/handbags': 'https://www.michaelkors.global/en_HK/women/handbags/_/N-1ysakls'
@@ -12,14 +16,12 @@ batch = boto3.client('batch')
 def lambda_handler(event, context):
     # Log the received event
     print("Received event: " + json.dumps(event, indent=2))
-    # Get parameters for the SubmitJob call
-    # http://docs.aws.amazon.com/batch/latest/APIReference/API_SubmitJob.html
-    jobName = event['jobName']
-    # jobQueue = event['jobQueue']
-    # jobDefinition = event['jobDefinition']
+    random_string_10 = ''.join(random.choice([chr(i) for i in range(ord('a'),ord('z'))]) for _ in range(10))
+
     
     
     job_ids = []
+    job_name = f'job-{random_string_10}' 
     job_definition = 'nft-question2-kros-scraping'
     job_queue = 'NftQuestion1JobQueue'
     
